@@ -495,10 +495,9 @@ BUILTP, CLONEDP, and MONO-REPO control which steps are excluded."
                         ((listp steps) steps)))))
     (if builtp
         steps
-      (when mono-repo
+      (when (or mono-repo clonedp)
         (setq steps
               (cl-set-difference steps '(elpaca--clone elpaca--configure-remotes elpaca--checkout-ref))))
-      (when clonedp (setq steps (remq 'elpaca--clone steps)))
       steps)))
 
 (declare-function elpaca-log-defaults "elpaca-log")
