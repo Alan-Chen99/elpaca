@@ -1530,12 +1530,19 @@ Loads or caches autoloads."
                    when build-dir collect build-dir))
          (program `(let ((gc-cons-percentage 1.0) ;; trade memory for gc speed
                          ,@(when (boundp 'native-comp-eln-load-path)
-                             `((native-comp-eln-load-path ',native-comp-eln-load-path))))
+                             `((native-comp-eln-load-path ',native-comp-eln-load-path)))
+                         bytecomp-did-fail)
                      (dolist (dir ',(cons default-directory dependency-dirs))
                        (let ((default-directory dir))
                          (add-to-list 'load-path dir)
                          (normal-top-level-add-subdirs-to-load-path)))
-                     (byte-recompile-directory ,default-directory 0 'force)))
+                     (setq byte-compile-log-warning-function
+                           (lambda (string position &optional fill level)
+                             (when (eq level :error)
+                               (setq bytecomp-did-fail t))
+                             (byte-compile--log-warning-for-byte-compile string position fill level)))
+                     (byte-recompile-directory ,default-directory 0 'force)
+                     (kill-emacs (if bytecomp-did-fail 1 0))))
          (print-level nil)
          (print-circle nil))
     (elpaca--make-process e
