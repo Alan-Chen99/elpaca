@@ -79,30 +79,19 @@ If it matches, signal ERROR if non-nil."
 (defun elpaca-process-poll (program &rest args)
   "Run PROGRAM with ARGS asynchronously, polling for messages.
 This allows for output to be passed back to the parent Emacs process."
-  (let* ((program (if (string-match-p "/" program) (expand-file-name program) program))
-         (subprocess
-          `(with-temp-buffer
-             (when (< emacs-major-version 28) (require 'subr-x)) ;;@COMPAT: Emacs 27
-             (setq load-prefer-newer t)
-             (let ((p (make-process
-                       :name   ,(concat "elpaca-process-poll-" program)
-                       :buffer (current-buffer)
-                       :command ',(cons program args))))
-               (add-hook
-                'after-change-functions
-                (lambda (beg end _)
-                  (when (process-live-p p)
-                    (message "%s" (string-trim (buffer-substring-no-properties beg end)))))
-                nil t)
-               (while (accept-process-output p)))))
-         (process (make-process
-                   :name   (concat "elpaca-process-poll-" program)
-                   :buffer (concat "elpaca-process-poll-" program)
-                   :connection-type 'pipe
-                   :command (list (elpaca--emacs-path) "-Q" "--batch" "--eval"
-                                  (format "%S" subprocess))
-                   :filter #'elpaca-process-poll--filter)))
-    (while (accept-process-output process))))
+  (let ((process
+         (make-process
+          :name (concat "elpaca-process-poll-" program)
+          :buffer (concat "elpaca-process-poll-" program)
+          :connection-type 'pipe
+          :command (cons program args)
+          :filter #'elpaca-process-poll--filter
+          :stderr nil)))
+    (while (accept-process-output process))
+    (unless (zerop (process-exit-status process))
+      (signal 'elpaca-process-poll (process-exit-status process)))
+    (process-exit-status process)))
+
 
 (defmacro elpaca-with-process (result &rest body)
   "Provide anaphoric RESULT bindings for duration of BODY.
