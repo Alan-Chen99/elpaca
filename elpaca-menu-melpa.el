@@ -25,7 +25,8 @@
 ;;; Code:
 (require 'cl-lib)
 (require 'elpaca)
-(require 'url)
+(eval-when-compile
+  (require 'url))
 
 (defvar elpaca-menu-melpa--index-cache
   (elpaca--read-file (expand-file-name "melpa.eld" elpaca-cache-directory))

@@ -29,7 +29,8 @@
 ;;; Code:
 (eval-and-compile (require 'cl-lib))
 (eval-when-compile (require 'subr-x))
-(cl-declaim (optimize (safety 0) (speed 3)))
+(eval-when-compile
+  (cl-declaim (optimize (safety 0) (speed 3))))
 (require 'elpaca-process)
 (declare-function autoload-rubric "autoload")
 (declare-function info-initialize "info")
