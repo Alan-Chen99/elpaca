@@ -25,7 +25,8 @@
 ;;; Code:
 (require 'cl-lib)
 (require 'elpaca)
-(require 'url)
+(eval-when-compile
+  (require 'url))
 (defvar url-http-end-of-headers)
 (defvar url-http-response-status)
 (defvar elpaca-menu-elpas
