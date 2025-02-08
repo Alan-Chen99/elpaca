@@ -353,6 +353,10 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                             (if (listp menus) menus (list menus))
                           elpaca-menu-functions))))
                  (elpaca-menu-item id)))
+         (_ (progn
+              (setq item (copy-tree item))
+              (let ((orig (copy-tree (plist-get item :recipe))))
+                (setf (plist-get (plist-get item :recipe) :orig-recipe) orig))))
          (item-recipe (plist-put (plist-get item :recipe) :source (plist-get item :source)))
          (r (elpaca-merge-plists item-recipe mods props)))
     (unless (plist-get r :package) (setq r (plist-put r :package (symbol-name id))))
@@ -2018,9 +2022,8 @@ TYPE is either `repo` or `build`, for repo or build directory."
      do (when (and (not (member id seen))
                    (run-hook-with-args-until-failure 'elpaca-lock-file-functions e))
           (push `(,id
-                  :source "elpaca-menu-lock-file" :date ,(current-time)
                   :recipe
-                  ,(plist-put (copy-tree (elpaca<-recipe e))
+                  ,(plist-put (copy-tree (plist-get (elpaca<-recipe e) :orig-recipe))
                               :ref
                               (elpaca-with-dir id repo
                                 (elpaca-with-process-call ("git" "rev-parse" "HEAD")
@@ -2029,7 +2032,8 @@ TYPE is either `repo` or `build`, for repo or build directory."
                 es)
           (push id seen))
      finally (message "wrote %d elpacas to %s" (length es) path)
-     (pp (nreverse es)))))
+     (setq es (sort es))
+     (pp es))))
 
 (declare-function elpaca-ui-current-package "elpaca-ui")
 ;;;###autoload
