@@ -657,8 +657,9 @@ check (and possibly change) their statuses."
 (defun elpaca--continue-build (e &rest args)
   "Run E's next build step.
 Optional ARGS are passed to `elpaca--signal', which see."
-  (elpaca--signal e (format "Continued by: %S"
-                            (elpaca--caller-name 2 'elpaca--process-sentinel 'apply))
+  (elpaca--signal e (format "Continued by: %s"
+                            (cl-prin1-to-string
+                             (elpaca--caller-name 2 'elpaca--process-sentinel 'apply)))
                   nil nil 2)
   (when args (apply #'elpaca--signal e args))
   (unless (memq (elpaca--status e) elpaca--inactive-states)
