@@ -102,8 +102,9 @@
                         (elpaca-menu-item . ,item-recipe))
        for (prop val) on recipe by #'cddr
        unless (or (eq prop :package) (and (eq prop :source) (null val)))
-       do (push (format " %s %S" prop
-                        (if (equal val elpaca-default-files-directive) '(:defaults) val))
+       do (push (format " %s %s" prop
+                        (cl-prin1-to-string
+                         (if (equal val elpaca-default-files-directive) '(:defaults) val)))
                 (alist-get (cl-loop for source in sources thereis
                                     (when-let* ((member (plist-member (cdr source) prop))
                                                 ((equal (cadr member) val)))

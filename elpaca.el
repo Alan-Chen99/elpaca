@@ -355,8 +355,11 @@ When INTERACTIVE is non-nil, `yank' the recipe to the clipboard."
                  (elpaca-menu-item id)))
          (_ (progn
               (setq item (copy-tree item))
-              (let ((orig (copy-tree (plist-get item :recipe))))
-                (setf (plist-get (plist-get item :recipe) :orig-recipe) orig))))
+              (let ((copy2 (copy-tree item)))
+                (setf (plist-get copy2 :source) (or (plist-get copy2 :source) "Init file"))
+                (setf (plist-get (plist-get copy2 :recipe) :package)
+                      (or (plist-get (plist-get copy2 :recipe) :package) (symbol-name id)))
+                (setf (plist-get (plist-get item :recipe) :orig-recipe) copy2))))
          (item-recipe (plist-put (plist-get item :recipe) :source (plist-get item :source)))
          (r (elpaca-merge-plists item-recipe mods props)))
     (unless (plist-get r :package) (setq r (plist-put r :package (symbol-name id))))
@@ -2018,19 +2021,17 @@ TYPE is either `repo` or `build`, for repo or build directory."
   (interactive "FWrite lock-file to: ")
   (elpaca--write-file path
     (cl-loop
-     with print-circle = t with seen with es
+     with print-circle = nil with seen with es
      for (id . e) in (or elpacas (elpaca--queued))
      do (when (and (not (member id seen))
                    (run-hook-with-args-until-failure 'elpaca-lock-file-functions e))
-          (push `(,id
-                  :recipe
-                  ,(plist-put (copy-tree (plist-get (elpaca<-recipe e) :orig-recipe))
-                              :ref
-                              (elpaca-with-dir id repo
-                                (elpaca-with-process-call ("git" "rev-parse" "HEAD")
-                                  (if success (string-trim stdout)
-                                    (error "Unable to write lock-file: %s %S" id stderr))))))
-                es)
+          (let ((item (copy-tree (plist-get (elpaca<-recipe e) :orig-recipe))))
+            (setf (plist-get (plist-get item :recipe) :ref)
+                  (elpaca-with-dir id repo
+                    (elpaca-with-process-call ("git" "rev-parse" "HEAD")
+                      (if success (string-trim stdout)
+                        (error "Unable to write lock-file: %s %S" id stderr)))))
+            (push (cons id item) es))
           (push id seen))
      finally (message "wrote %d elpacas to %s" (length es) path)
      (setq es (sort es))
